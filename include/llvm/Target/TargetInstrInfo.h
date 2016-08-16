@@ -549,6 +549,12 @@ public:
     llvm_unreachable("Target didn't implement TargetInstrInfo::InsertBranch!");
   }
 
+  unsigned InsertUnconditionalBranch(MachineBasicBlock &MBB,
+                                     MachineBasicBlock *DestBB,
+                                     const DebugLoc &DL) const {
+    return InsertBranch(MBB, DestBB, nullptr, ArrayRef<MachineOperand>(), DL);
+  }
+
   /// Analyze the loop code, return true if it cannot be understoo. Upon
   /// success, this function returns false and returns information about the
   /// induction variable and compare instruction used at the end.

@@ -3011,15 +3011,15 @@ void SwingSchedulerDAG::addBranches(MBBVectorTy &PrologBBs,
     if (LCMin == UINT_MAX)
       LCMin = LC;
 
-    unsigned numAdded = 0;
+    MachineBasicBlock::reverse_instr_iterator E = Prolog->instr_rbegin();
     if (TargetRegisterInfo::isVirtualRegister(LC)) {
       Prolog->addSuccessor(Epilog);
-      numAdded = TII->InsertBranch(*Prolog, Epilog, LastPro, Cond, DebugLoc());
+      TII->InsertBranch(*Prolog, Epilog, LastPro, Cond, DebugLoc());
     } else if (j >= LCMin) {
       Prolog->addSuccessor(Epilog);
       Prolog->removeSuccessor(LastPro);
       LastEpi->removeSuccessor(Epilog);
-      numAdded = TII->InsertBranch(*Prolog, Epilog, nullptr, Cond, DebugLoc());
+      TII->InsertBranch(*Prolog, Epilog, nullptr, Cond, DebugLoc());
       removePhis(Epilog, LastEpi);
       // Remove the blocks that are no longer referenced.
       if (LastPro != LastEpi) {
@@ -3029,15 +3029,16 @@ void SwingSchedulerDAG::addBranches(MBBVectorTy &PrologBBs,
       LastPro->clear();
       LastPro->eraseFromParent();
     } else {
-      numAdded = TII->InsertBranch(*Prolog, LastPro, nullptr, Cond, DebugLoc());
+      TII->InsertBranch(*Prolog, LastPro, nullptr, Cond, DebugLoc());
       removePhis(Epilog, Prolog);
     }
     LastPro = Prolog;
     LastEpi = Epilog;
-    for (MachineBasicBlock::reverse_instr_iterator I = Prolog->instr_rbegin(),
-                                                   E = Prolog->instr_rend();
-         I != E && numAdded > 0; ++I, --numAdded)
+    for (MachineBasicBlock::reverse_instr_iterator I = Prolog->instr_rbegin();
+         I != E; ++I) {
+      llvm_unreachable("breakpoint");
       updateInstruction(&*I, false, j, 0, Schedule, VRMap);
+    }
   }
 }
 
