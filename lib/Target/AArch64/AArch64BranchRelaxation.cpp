@@ -477,9 +477,28 @@ bool AArch64BranchRelaxation::relaxBranchInstructions() {
     if (J == MBB.end())
       continue;
 
+    MachineBasicBlock::iterator Next = std::next(J);
     MachineInstr &MI = *J;
     if (MI.isConditionalBranch() && !isBlockInRange(MI, *getDestBlock(MI))) {
-      fixupConditionalBranch(MI);
+      if (Next != MBB.end() && Next->isConditionalBranch()) {
+        MachineBasicBlock *DestBB = getDestBlock(MI);
+
+        // If there are multiple conditional branches, this isn't an
+        // analyzable block. Split later terminators into a new block so
+        // each one will be analyzable.
+
+        MachineBasicBlock *NewBB = splitBlockBeforeInstr(*Next);
+        NewBB->transferSuccessors(&MBB);
+        MBB.addSuccessor(NewBB);
+        MBB.addSuccessor(DestBB);
+
+        // Cleanup potential unconditional branch to successor block.
+        NewBB->updateTerminator();
+        MBB.updateTerminator();
+      } else {
+        fixupConditionalBranch(MI);
+      }
+
       ++NumRelaxed;
       Changed = true;
     }
